@@ -7,6 +7,6 @@ STAGE_DIR = PROJECT_ROOT / "stage_1_import_filtering"
 if str(STAGE_DIR) not in sys.path:
     sys.path.insert(0, str(STAGE_DIR))
 
-from app_review_pipeline_updated import main
+from stage_1_app import main
 
 main()

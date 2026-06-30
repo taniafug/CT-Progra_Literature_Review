@@ -1,0 +1,13 @@
+streamlit>=1.40
+pandas>=2.2
+numpy>=2.0
+openpyxl>=3.1
+xlsxwriter>=3.2
+python-dotenv>=1.0
+openai>=1.55
+requests>=2.32
+PyMuPDF>=1.25
+pypdf>=5.0
+matplotlib>=3.9
+seaborn>=0.13
+plotly>=5.24

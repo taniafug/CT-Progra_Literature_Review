@@ -10,7 +10,7 @@ if str(STAGE_DIR) not in sys.path:
     sys.path.insert(0, str(STAGE_DIR))
 
 
-from app_pairing_clean import main
+from stage_4_app import main
 
 
 main()

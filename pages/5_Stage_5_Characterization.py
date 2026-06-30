@@ -7,6 +7,6 @@ STAGE_DIR = PROJECT_ROOT / "stage_5_characterization"
 if str(STAGE_DIR) not in sys.path:
     sys.path.insert(0, str(STAGE_DIR))
 
-from characterization_app import main
+from stage_5_app import main
 
 main()

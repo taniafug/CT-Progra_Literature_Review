@@ -616,30 +616,57 @@ def network_plot_filtered(pair_data, title, exclude_algorithmic=False, ct_filter
 
 
 def grouped_frequency_bar(mapped_df, framework_df, label_col, mapped_value_col, framework_value_col, title):
+    MIN_PAPERS_FOR_COMPARISON = 10
+
     if mapped_df.empty or framework_df.empty:
+        print(f"Few data for visualization: {title}")
         return None
 
-    comparison = mapped_df[[label_col, mapped_value_col]].merge(
-        framework_df[[label_col, framework_value_col]],
+    mapped_total = mapped_df[mapped_value_col].sum() if mapped_value_col in mapped_df.columns else 0
+    framework_total = framework_df[framework_value_col].sum() if framework_value_col in framework_df.columns else 0
+
+    if mapped_total < MIN_PAPERS_FOR_COMPARISON or framework_total < MIN_PAPERS_FOR_COMPARISON:
+        print(f"Few data for visualization: {title}")
+        return None
+
+    mapped_small = mapped_df[[label_col, mapped_value_col]].copy()
+    framework_small = framework_df[[label_col, framework_value_col]].copy()
+
+    mapped_small = mapped_small.rename(columns={mapped_value_col: "Mapped_frequency"})
+    framework_small = framework_small.rename(columns={framework_value_col: "Framework_frequency"})
+
+    comparison = mapped_small.merge(
+        framework_small,
         on=label_col,
         how="outer",
     ).fillna(0)
 
-    comparison[mapped_value_col] = comparison[mapped_value_col].astype(int)
-    comparison[framework_value_col] = comparison[framework_value_col].astype(int)
+    comparison["Mapped_frequency"] = pd.to_numeric(
+        comparison["Mapped_frequency"],
+        errors="coerce"
+    ).fillna(0).astype(int)
 
-    comparison = comparison.sort_values(mapped_value_col, ascending=False)
+    comparison["Framework_frequency"] = pd.to_numeric(
+        comparison["Framework_frequency"],
+        errors="coerce"
+    ).fillna(0).astype(int)
 
     comparison = comparison[
-    ~comparison[label_col].astype(str).str.strip().isin([
-        "",
-        "nan",
-        "None",
-        "Undetermined",
-        "Not applicable",
-        "Manual revision",
-    ])
+        ~comparison[label_col].astype(str).str.strip().isin([
+            "",
+            "nan",
+            "None",
+            "Undetermined",
+            "Not applicable",
+            "Manual revision",
+        ])
     ].copy()
+
+    if comparison.empty:
+        print(f"Few data for visualization: {title}")
+        return None
+
+    comparison = comparison.sort_values("Mapped_frequency", ascending=False)
 
     x = range(len(comparison))
     width = 0.38
@@ -648,7 +675,7 @@ def grouped_frequency_bar(mapped_df, framework_df, label_col, mapped_value_col, 
 
     bars1 = ax.bar(
         [i - width / 2 for i in x],
-        comparison[mapped_value_col],
+        comparison["Mapped_frequency"],
         width,
         label="Mapped papers",
         color="#1192b5",
@@ -656,7 +683,7 @@ def grouped_frequency_bar(mapped_df, framework_df, label_col, mapped_value_col, 
 
     bars2 = ax.bar(
         [i + width / 2 for i in x],
-        comparison[framework_value_col],
+        comparison["Framework_frequency"],
         width,
         label="Framework-following papers",
         color="#f28e2b",
@@ -666,8 +693,8 @@ def grouped_frequency_bar(mapped_df, framework_df, label_col, mapped_value_col, 
     ax.bar_label(bars2, padding=3)
 
     max_value = max(
-        comparison[mapped_value_col].max(),
-        comparison[framework_value_col].max(),
+        comparison["Mapped_frequency"].max(),
+        comparison["Framework_frequency"].max(),
     )
 
     ax.set_ylim(0, max_value + max(1, max_value * 0.18))

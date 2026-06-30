@@ -50,7 +50,7 @@ The workflow is organized into six stages:
 """)
 
 # ============================================================
-# Download Templates
+# Download Rules files
 # ============================================================
 
 st.header("📥 Download Templates and Configuration Files")
@@ -58,9 +58,26 @@ st.header("📥 Download Templates and Configuration Files")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = PROJECT_ROOT / "templates"
 
+
+def download_file(filename, label=None):
+    filepath = TEMPLATES_DIR / filename
+
+    if filepath.exists():
+        with open(filepath, "rb") as file:
+            st.download_button(
+                label=label or f"📥 {filename}",
+                data=file,
+                file_name=filepath.name,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+    else:
+        st.caption(f"⚠ {filename} not found")
+
+
+
 if TEMPLATES_DIR.exists():
 
-    template_files = sorted(TEMPLATES_DIR.glob("*.xlsx"))
+    template_files = sorted(TEMPLATES_DIR.rglob("*.xlsx"))
 
     if template_files:
 
@@ -69,7 +86,7 @@ if TEMPLATES_DIR.exists():
             with open(template, "rb") as file:
 
                 st.download_button(
-                    label=f"📥 {template.stem}",
+                    label=f"📥 {template.relative_to(TEMPLATES_DIR)}",
                     data=file,
                     file_name=template.name,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

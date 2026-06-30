@@ -41,21 +41,21 @@ STAGE_4_PAIR_MAPPING_PATH = (
     PROJECT_ROOT
     / "stage_4_full_pairing"
     / "output"
-    / "pair_level_mapping_results.xlsx"
+    / "stage_4_pairing_analysis.xlsx"
 )
 
 STAGE_5_CHARACTERIZATION_PATH = (
     PROJECT_ROOT
     / "stage_5_characterization"
     / "output"
-    / "results_characterization.xlsx"
+    / "stage_5_to_stage_6_input.xlsx"
 )
 
 STAGE_4_PAPER_MAPPING_PATH = (
     PROJECT_ROOT
     / "stage_4_full_pairing"
     / "output"
-    / "paper_level_framework_results.xlsx"
+    / "stage_4_paper_analysis.xlsx"
 )
 # --------------------------------------------------
 # Copying outputs as inputs to stage 6
@@ -814,7 +814,7 @@ def main():
             column="Disciplinary_Focus",
             title="Disciplinary focus: all papers vs framework papers",
             xlabel="Disciplinary focus",
-            figures_dir=OUTPUT_DIR_6,
+            figures_dir=figures_dir,
             filename="Disciplinary_focus_framework_comparison",
         )
         if len(data) == 0:
@@ -2084,168 +2084,7 @@ def main():
 
             plt.close(fig)
 
-        # --------------------------------------------------
-        # Sunburst: Selected regions only
-        # --------------------------------------------------
 
-        st.markdown("## Sunburst: Region, educational context, and programming paradigm")
-
-        selected_regions = [
-            "Asia",
-            "North America",
-            "Latin America",
-            "Europe"
-        ]
-
-        sunburst_data = plot_data[
-            plot_data["Geographical_Region"].isin(selected_regions)
-        ][
-            [
-                "Geographical_Region",
-                "Educational_Context",
-                "Programming_Type (paradigm)"
-            ]
-        ].copy()
-
-        sunburst_data = sunburst_data.fillna("Not reported")
-
-        sunburst_counts = (
-            sunburst_data
-            .groupby([
-                "Geographical_Region",
-                "Educational_Context",
-                "Programming_Type (paradigm)"
-            ])
-            .size()
-            .reset_index(name="Count")
-        )
-
-        fig_sunburst = px.sunburst(
-            sunburst_counts,
-            path=[
-                "Geographical_Region",
-                "Educational_Context",
-                "Programming_Type (paradigm)"
-            ],
-            values="Count",
-            title="Regional and Educational Distribution of Programming Paradigms"
-        )
-
-        fig_sunburst.update_layout(
-            height=750,
-            margin=dict(t=60, l=10, r=10, b=10)
-        )
-
-        st.plotly_chart(fig_sunburst, width="stretch")
-
-        fig_sunburst.write_html(
-            str(figures_dir / "geo_context_programming_sunburst.html")
-        )
-
-        st.markdown("## Sunburst: Region, educational context, and disciplinary focus")
-
-        sunburst_context_discipline = plot_data[
-            [
-                "Geographical_Region",
-                "Educational_Context",
-                "Disciplinary_Focus"
-            ]
-        ].copy()
-
-        sunburst_context_discipline = sunburst_context_discipline.fillna("Not reported")
-
-        sunburst_context_discipline_counts = (
-            sunburst_context_discipline
-            .groupby([
-                "Geographical_Region",
-                "Educational_Context",
-                "Disciplinary_Focus"
-            ])
-            .size()
-            .reset_index(name="Count")
-        )
-
-        fig_sunburst_context_discipline = px.sunburst(
-            sunburst_context_discipline_counts,
-            path=[
-                "Geographical_Region",
-                "Educational_Context",
-                "Disciplinary_Focus"
-            ],
-            values="Count",
-            title="Regional and Educational Distribution by Disciplinary Focus"
-        )
-
-        st.plotly_chart(fig_sunburst_context_discipline, width="stretch")
-
-        fig_sunburst_context_discipline.write_html(
-        str(figures_dir / "geo_context_disciplinary_focus_sunburst.html")
-        )
-
-        # --------------------------------------------------
-        # Radar chart
-        # --------------------------------------------------
-
-        st.markdown("## Radar charts by variable")
-
-        radar_variables = {
-            "Type_of_Contribution": "Contribution Type",
-            "Educational_Context": "Educational Context",
-            "Disciplinary_Focus": "Disciplinary Focus",
-        }
-
-        for var, label in radar_variables.items():
-
-            if var not in plot_data.columns:
-                continue
-
-            st.markdown(f"### {label} by region")
-
-            radar_rows = []
-
-            for region, region_df in plot_data.groupby("Geographical_Region"):
-
-                total = len(region_df)
-                if total == 0:
-                    continue
-
-                categories = region_df[var].dropna().unique()
-
-                row = {"Geographical_Region": region}
-
-                for cat in categories:
-                    row[cat] = round((region_df[var] == cat).sum() / total * 100, 1)
-
-                radar_rows.append(row)
-
-            radar_df = pd.DataFrame(radar_rows)
-
-            if radar_df.empty:
-                continue
-
-            radar_long = radar_df.melt(
-                id_vars="Geographical_Region",
-                var_name="Category",
-                value_name="Percentage"
-            )
-
-            fig = px.line_polar(
-                radar_long,
-                r="Percentage",
-                theta="Category",
-                color="Geographical_Region",
-                line_close=True,
-                range_r=[0, 100],
-                title=f"{label} distribution by region"
-            )
-
-            fig.update_traces(fill="toself")
-
-            st.plotly_chart(fig, width="stretch")
-
-            fig.write_html(str(figures_dir / f"radar_{safe_filename(var)}.html"))
-
-        st.success(f"Figures saved in: {figures_dir}")
 
 
 if __name__ == "__main__":

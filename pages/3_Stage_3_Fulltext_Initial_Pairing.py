@@ -7,6 +7,6 @@ STAGE_DIR = PROJECT_ROOT / "stage_3_fulltext_initial_pairing"
 if str(STAGE_DIR) not in sys.path:
     sys.path.insert(0, str(STAGE_DIR))
 
-from fulltext_screening_app import main
+from stage_3_app import main
 
 main()
