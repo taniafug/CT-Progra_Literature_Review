@@ -54,3 +54,5 @@ pdf_repository/
 build/
 dist/
 *.egg-info/
+
+*:Zone.Identifier
