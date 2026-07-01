@@ -801,34 +801,18 @@ def calculate_costs(results_df: pd.DataFrame, input_price_per_1m: float, output_
     return charges, summary
 
 
-def manual_review_mask(results_df: pd.DataFrame) -> pd.Series:
-    if results_df.empty:
-        return pd.Series(dtype=bool)
-
-    text = results_df.astype(str).agg(" ".join, axis=1).str.lower()
-    return (
-        text.str.contains("manual revision", na=False)
-        | text.str.contains("undetermined", na=False)
-        | text.str.contains("error", na=False)
-        | text.str.contains("manual check needed", na=False)
-    )
-
-
 def make_analysis_input(success_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Creates the clean characterization dataset for analysis.
+    Creates the clean characterization dataset for Stage 6 analysis.
 
     This sheet is intentionally different from Success/All_results:
-    it removes technical LLM/execution columns and keeps a characterization-level
-    review flag derived from the characterization output itself.
+    it removes technical LLM and execution-related columns while preserving
+    only the characterization variables required for the final analysis.
     """
     if success_df.empty:
         return pd.DataFrame()
 
     out = success_df.copy()
-
-    review_mask = manual_review_mask(out)
-    out["Characterization_Manual_Review"] = review_mask.map({True: "Yes", False: "No"})
 
     technical_cols = [
         "Source_File",
@@ -889,10 +873,9 @@ def build_output_dataframes(results: List[Dict[str, Any]], input_price_per_1m: f
     results_df = pd.DataFrame(results)
     if results_df.empty:
         empty = pd.DataFrame()
-        return {"results": empty, "summary": empty, "success": empty, "errors": empty, "manual_review": empty, "charges": empty, "charges_summary": empty, "author_sample": empty, "author_clean": empty, "analysis_input": empty}
+        return {"results": empty, "summary": empty, "success": empty, "errors": empty, "charges": empty, "charges_summary": empty, "author_sample": empty, "author_clean": empty, "analysis_input": empty}
     success_df = results_df[results_df["Processing_Status"] == "Success"].copy() if "Processing_Status" in results_df.columns else pd.DataFrame()
     errors_df = results_df[results_df["Processing_Status"] == "Error"].copy() if "Processing_Status" in results_df.columns else pd.DataFrame()
-    manual_review_df = results_df[manual_review_mask(results_df)].copy()
     charges_df, charges_summary = calculate_costs(results_df, input_price_per_1m, output_price_per_1m)
     author_sample = sample_author_validation(results_df, sample_fraction, random_seed)
     author_clean = make_author_check_clean(author_sample)
@@ -924,7 +907,6 @@ def build_output_dataframes(results: List[Dict[str, Any]], input_price_per_1m: f
     summary_df = pd.DataFrame([
         {"category": "Successfully characterized", "count": len(success_df)},
         {"category": "Error during characterization", "count": len(errors_df)},
-        {"category": "Manual review needed", "count": len(manual_review_df)},
         {"category": "Validation sample selected", "count": len(author_sample)},
         {"category": "Total included studies processed", "count": len(results_df)},
         {"category": "Unique papers characterized", "count": unique_papers_processed},
@@ -936,7 +918,6 @@ def build_output_dataframes(results: List[Dict[str, Any]], input_price_per_1m: f
         "summary": summary_df,
         "success": success_df,
         "errors": errors_df,
-        "manual_review": manual_review_df,
         "charges": charges_df,
         "charges_summary": charges_summary,
         "author_sample": author_sample,
@@ -1034,13 +1015,11 @@ def write_output_workbooks(
        - Summary
        - Success
        - Errors
-       - Manual_review_needed
        - Analysis_input
 
     2. characterization_author_validation.xlsx
        - Author_check_sample
        - Author_check_clean
-       - Manual_review_needed
 
     3. characterization_llm_costs.xlsx
        - LLM_charges
@@ -1065,7 +1044,6 @@ def write_output_workbooks(
             "Summary": outputs["summary"],
             "Success": outputs["success"],
             "Errors": outputs["errors"],
-            "Manual_review_needed": outputs["manual_review"],
             "Analysis_input": outputs["analysis_input"],
         },
     )
@@ -1075,7 +1053,6 @@ def write_output_workbooks(
         {
             "Author_check_sample": outputs["author_sample"],
             "Author_check_clean": outputs["author_clean"],
-            "Manual_review_needed": outputs["manual_review"],
         },
     )
 

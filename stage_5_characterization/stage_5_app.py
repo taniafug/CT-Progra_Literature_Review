@@ -347,8 +347,6 @@ def main():
         st.success("Done. Final output workbooks saved successfully.")
         st.subheader("Summary")
         st.dataframe(outputs["summary"], use_container_width=True)
-        st.subheader("Manual review needed")
-        st.dataframe(outputs["manual_review"], use_container_width=True)
         st.subheader("Cost summary")
         st.dataframe(outputs["charges_summary"], use_container_width=True)
 
